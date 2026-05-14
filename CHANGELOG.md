@@ -1,3 +1,11 @@
+# Changelog
+
+## Release 0.5.1
+
+### New features
+
+* **Bump ruby_task_helper upper bound to < 2.0.0** ([#16](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/16))
+
 ## Release 0.5.0
 
 ### New features
