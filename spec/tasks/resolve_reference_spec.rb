@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require_relative '../../tasks/resolve_reference.rb'
+require_relative '../../tasks/resolve_reference'
 
 describe AzureInventory do
   def with_env(key, val)
-    old_val = ENV[key]
+    old_val = ENV.fetch(key, nil)
     ENV[key] = val
     yield
   ensure
@@ -32,35 +32,33 @@ describe AzureInventory do
     allow(subject).to receive(:request).and_return(nil)
   end
 
-  describe "#resolve_reference" do
+  describe '#resolve_reference' do
     before :each do
-      allow(subject).to receive(:vms).and_return(fixture('vms'))
-      allow(subject).to receive(:ip_addresses).and_return(fixture('ip_addresses'))
-      allow(subject).to receive(:nics).and_return(fixture('nics'))
+      allow(subject).to receive_messages(vms: fixture('vms'), ip_addresses: fixture('ip_addresses'), nics: fixture('nics'))
     end
 
     it 'generates a list of targets with ip addresses' do
       allow(subject).to receive(:token).and_return({})
 
       targets = [
-        { "name" => "rgtest-1", "uri" => "52.160.41.155" },
-        { "name" => "test-instance-1", "uri" => "40.118.207.76" }
+        { 'name' => 'rgtest-1', 'uri' => '52.160.41.155' },
+        { 'name' => 'test-instance-1', 'uri' => '40.118.207.76' },
       ]
       expect(subject.resolve_reference(opts)).to eq(targets)
     end
   end
 
-  describe "#credentials" do
+  describe '#credentials' do
     it 'reads credentials from the supplied options' do
       expect(subject.credentials(opts)).to eq(
         'tenant_id' => tenant_id,
         'client_id' => client_id,
         'client_secret' => client_secret,
-        'subscription_id' => subscription_id
+        'subscription_id' => subscription_id,
       )
     end
 
-    %i[tenant_id client_id client_secret subscription_id].each do |key|
+    [:tenant_id, :client_id, :client_secret, :subscription_id].each do |key|
       it "accepts #{key} from the environment" do
         env_key = "AZURE_#{key.upcase}"
         val = opts.delete(key)
@@ -70,19 +68,19 @@ describe AzureInventory do
             'tenant_id' => tenant_id,
             'client_id' => client_id,
             'client_secret' => client_secret,
-            'subscription_id' => subscription_id
+            'subscription_id' => subscription_id,
           )
         end
       end
 
       it "fails if #{key} is unset" do
         opts.delete(key)
-        expect { subject.credentials(opts) }.to raise_error(TaskHelper::Error, /#{key} must be specified/)
+        expect { subject.credentials(opts) }.to raise_error(TaskHelper::Error, %r{#{key} must be specified})
       end
     end
   end
 
-  describe "#get_all_results" do
+  describe '#get_all_results' do
     let(:token) { { 'token_type' => 'foo', 'access_token' => 'bar' } }
 
     it 'loops through each page of results' do
@@ -92,26 +90,26 @@ describe AzureInventory do
                      'nextLink' => "https://example.com/page/#{i + 1}" }
         allow(subject).to receive(:request).with(:Get, uri, nil, anything).and_return(response)
       end
-      uri = URI.parse("https://example.com/page/4")
-      response = { 'value' => %w[4a 4b 4c] }
+      uri = URI.parse('https://example.com/page/4')
+      response = { 'value' => ['4a', '4b', '4c'] }
       allow(subject).to receive(:request).with(:Get, uri, nil, anything).and_return(response)
 
-      results = subject.get_all_results("https://example.com/page/1", token)
-      expect(results).to eq(%w[1a 1b 1c 2a 2b 2c 3a 3b 3c 4a 4b 4c])
+      results = subject.get_all_results('https://example.com/page/1', token)
+      expect(results).to eq(['1a', '1b', '1c', '2a', '2b', '2c', '3a', '3b', '3c', '4a', '4b', '4c'])
     end
   end
 
-  describe "#task" do
+  describe '#task' do
     it 'fails if scale_set is requested without resource_group' do
       result = subject.task(scale_set: 'something')
       expect(result).to have_key(:_error)
-      expect(result[:_error]['msg']).to match(/resource_group must be specified in order to filter by scale_set/)
+      expect(result[:_error]['msg']).to match(%r{resource_group must be specified in order to filter by scale_set})
     end
 
     it 'returns the list of targets' do
       targets = [
-        { "uri": "1.2.3.4", "name": "my-instance" },
-        { "uri": "1.2.3.5", "name": "my-other-instance" }
+        { uri: '1.2.3.4', name: 'my-instance' },
+        { uri: '1.2.3.5', name: 'my-other-instance' },
       ]
       allow(subject).to receive(:resolve_reference).and_return(targets)
 
@@ -126,7 +124,7 @@ describe AzureInventory do
       result = subject.task({})
 
       expect(result).to have_key(:_error)
-      expect(result[:_error]['msg']).to match(/something went wrong/)
+      expect(result[:_error]['msg']).to match(%r{something went wrong})
     end
   end
 end
