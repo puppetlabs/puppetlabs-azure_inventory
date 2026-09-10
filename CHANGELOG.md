@@ -1,5 +1,16 @@
 # Changelog
 
+## Release 1.0.0
+
+### Changes
+
+* **Bump minimum supported Puppet to 8.0.0 and expand OS support matrix**
+
+  Move the `puppet` requirement floor from `>= 4.10.0 < 8.0.0` to
+  `>= 8.0.0 < 10.0.0` to support Puppet 9. This is a breaking change for
+  users on Puppet versions older than 8. `operatingsystem_support` has
+  also been expanded to the current supported OS matrix.
+
 ## Release 0.5.1
 
 ### New features
