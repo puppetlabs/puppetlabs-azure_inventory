@@ -1,58 +1,80 @@
+<!-- markdownlint-disable MD024 -->
 # Changelog
 
-## Release 0.5.1
+All notable changes to this project will be documented in this file.
 
-### New features
+The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](http://semver.org).
 
-* **Bump ruby_task_helper upper bound to < 2.0.0** ([#16](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/16))
+## [v1.0.0](https://github.com/puppetlabs/puppetlabs-azure_inventory/tree/v1.0.0) - 2026-09-10
 
-## Release 0.5.0
+[Full Changelog](https://github.com/puppetlabs/puppetlabs-azure_inventory/compare/0.5.1...v1.0.0)
 
-### New features
+### Changed
 
-* **Bump maximum Puppet version to include 7.x** ([#14](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/14))
+- (BOLT-193) azure_inventory pdk update to puppet 9 [#18](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/18) ([gavindidrichsen](https://github.com/gavindidrichsen))
 
-## Release 0.4.1
+### Other
 
-### Bug fixes
+- CHANGELOG update [#19](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/19) ([gavindidrichsen](https://github.com/gavindidrichsen))
+- (BOLT-136) Prepare for release. [#17](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/17) ([gavindidrichsen](https://github.com/gavindidrichsen))
 
-* **Add PDK as a gem dependency**
+## [0.5.1](https://github.com/puppetlabs/puppetlabs-azure_inventory/tree/0.5.1) - 2026-05-14
 
-  PDK is now a gem dependency for the module release pipeline
+[Full Changelog](https://github.com/puppetlabs/puppetlabs-azure_inventory/compare/0.5.0...0.5.1)
 
-## Release 0.4.0
+### Other
 
-### New features
+- (BOLT-136) Bump ruby_task_helper upper bound to < 2.0.0 [#16](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/16) ([gavindidrichsen](https://github.com/gavindidrichsen))
+- (maint) Add release workflow [#15](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/15) ([beechtom](https://github.com/beechtom))
 
-* **Add debugging statements to task errors**
-  ([#9](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/9))
+## [0.5.0](https://github.com/puppetlabs/puppetlabs-azure_inventory/tree/0.5.0) - 2021-01-21
 
-  Error objects returned from the `resolve_reference` task now includes
-  debugging statements that describe the steps the task is taking under
-  the `details` key.
+[Full Changelog](https://github.com/puppetlabs/puppetlabs-azure_inventory/compare/0.4.1...0.5.0)
 
-### Bug fixes
+### Other
 
-* **Add missing dependency to module metadata**
-  ([#10](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/9))
+- (maint) Bump maximum Puppet version to include 7.x, prep for release [#14](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/14) ([lucywyman](https://github.com/lucywyman))
+- (maint) Add code of conduct and contributing docs [#13](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/13) ([beechtom](https://github.com/beechtom))
 
-  The module metadata now includes `ruby_plugin_helper` and `ruby_task_helper`
-  as dependencies.
+## [0.4.1](https://github.com/puppetlabs/puppetlabs-azure_inventory/tree/0.4.1) - 2020-09-29
 
-## Release 0.3.0
+[Full Changelog](https://github.com/puppetlabs/puppetlabs-azure_inventory/compare/0.4.0...0.4.1)
 
-### New features
+### Other
 
-* **Set `resolve_reference` task to private** ([#6](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/6))
+- (maint) Update source in metadata.json [#12](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/12) ([beechtom](https://github.com/beechtom))
+- (maint) Add PDK as a dependency [#11](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/11) ([lucywyman](https://github.com/lucywyman))
 
-    The `resolve_reference` task has been set to `private` so it no longer appears in UI lists.
+## [0.4.0](https://github.com/puppetlabs/puppetlabs-azure_inventory/tree/0.4.0) - 2020-09-17
 
-## Release 0.2.0
+[Full Changelog](https://github.com/puppetlabs/puppetlabs-azure_inventory/compare/0.3.0...0.4.0)
 
-**Changes**
+### Other
 
-This converts the module to a Bolt plugin, which includes renaming the `inventory_targets` task to `resolve_references`.
+- (maint) Bump module version to 0.4.0 [#10](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/10) ([beechtom](https://github.com/beechtom))
+- (bug) Add missing ruby_task_helper dependency [#9](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/9) ([beechtom](https://github.com/beechtom))
+- (maint) Add debugging statements [#8](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/8) ([beechtom](https://github.com/beechtom))
 
-## Release 0.1.0
+## [0.3.0](https://github.com/puppetlabs/puppetlabs-azure_inventory/tree/0.3.0) - 2020-02-14
 
-This is the initial release.
+[Full Changelog](https://github.com/puppetlabs/puppetlabs-azure_inventory/compare/0.2.0...0.3.0)
+
+### Other
+
+- (maint) Prep 0.3.0 [#7](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/7) ([beechtom](https://github.com/beechtom))
+- (maint) Set resolve_reference task to private [#6](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/6) ([beechtom](https://github.com/beechtom))
+- (packaging) Pin puppet-blacksmith to enable jenkins ship to forge [#5](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/5) ([donoghuc](https://github.com/donoghuc))
+- (maint) Add CODEOWNERS [#4](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/4) ([donoghuc](https://github.com/donoghuc))
+
+## [0.2.0](https://github.com/puppetlabs/puppetlabs-azure_inventory/tree/0.2.0) - 2019-09-26
+
+[Full Changelog](https://github.com/puppetlabs/puppetlabs-azure_inventory/compare/0.1.0...0.2.0)
+
+### Other
+
+- Release prep for 0.2.0 [#3](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/3) ([nicklewis](https://github.com/nicklewis))
+- Convert into a Bolt plugin [#2](https://github.com/puppetlabs/puppetlabs-azure_inventory/pull/2) ([nicklewis](https://github.com/nicklewis))
+
+## [0.1.0](https://github.com/puppetlabs/puppetlabs-azure_inventory/tree/0.1.0) - 2019-09-05
+
+[Full Changelog](https://github.com/puppetlabs/puppetlabs-azure_inventory/compare/12ec04e6460c80e7ea8d42479107e15146b3f3c0...0.1.0)
