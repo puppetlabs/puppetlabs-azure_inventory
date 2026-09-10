@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-require_relative '../../ruby_task_helper/files/task_helper.rb'
+require_relative '../../ruby_task_helper/files/task_helper' unless Object.const_defined?(:TaskHelper)
 require 'net/http'
 require 'openssl'
 
@@ -16,7 +16,7 @@ class AzureInventory < TaskHelper
     threads << Thread.start { ips = index_by_id(ip_addresses(token, creds, opts)) }
     threads.each(&:join)
 
-    vms.map do |vm|
+    vms.filter_map do |vm|
       interfaces = vm.dig('properties', 'networkProfile', 'networkInterfaces')
       nic_ids = interfaces.partition { |nic| nic['primary'] }.flatten.map { |nic| nic['id'] }
       vm_nics = nics.values_at(*nic_ids)
@@ -29,22 +29,23 @@ class AzureInventory < TaskHelper
 
       ip = vm_ips.compact.first
       next unless ip
+
       {
         'name' => ip.dig('properties', 'dnsSettings', 'fqdn') || vm['name'],
-        'uri' => ip.dig('properties', 'ipAddress')
+        'uri' => ip.dig('properties', 'ipAddress'),
       }.compact
-    end.compact
+    end
   end
 
   # Hash of required credentials for authorizing with the Azure REST API
   # These values can be set in 2 locations - inventory config or environment variables
   def credentials(opts)
-    debug("Gathering credentials")
+    debug('Gathering credentials')
     creds = {
-      'tenant_id' => (opts[:tenant_id] || ENV['AZURE_TENANT_ID']),
-      'client_id' => (opts[:client_id] || ENV['AZURE_CLIENT_ID']),
-      'client_secret' => (opts[:client_secret] || ENV['AZURE_CLIENT_SECRET']),
-      'subscription_id' => (opts[:subscription_id] || ENV['AZURE_SUBSCRIPTION_ID'])
+      'tenant_id' => opts[:tenant_id] || ENV.fetch('AZURE_TENANT_ID', nil),
+      'client_id' => opts[:client_id] || ENV.fetch('AZURE_CLIENT_ID', nil),
+      'client_secret' => opts[:client_secret] || ENV.fetch('AZURE_CLIENT_SECRET', nil),
+      'subscription_id' => opts[:subscription_id] || ENV.fetch('AZURE_SUBSCRIPTION_ID', nil),
     }
 
     missing_keys = creds.select { |_k, v| v.nil? }.keys
@@ -58,7 +59,7 @@ class AzureInventory < TaskHelper
 
   def get_all_results(url, token)
     header = {
-      'Authorization' => "#{token['token_type']} #{token['access_token']}"
+      'Authorization' => "#{token['token_type']} #{token['access_token']}",
     }
 
     instances = []
@@ -87,61 +88,59 @@ class AzureInventory < TaskHelper
   # Since each request only returns up to 1,000 results, requests will continue to be
   # sent until there is no longer a nextLink token in the result set
   def ip_addresses(token, creds, opts)
-    debug("Requesting data for IP addresses")
+    debug('Requesting data for IP addresses')
 
     # XXX What happens if I have multiple IP addresses for a single host?
     url = if opts[:resource_group]
             if opts[:scale_set]
               "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-              "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Compute/" \
-              "virtualMachineScaleSets/#{opts[:scale_set]}/" \
-              "publicIPAddresses?api-version=2017-03-30"
+                "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Compute/" \
+                "virtualMachineScaleSets/#{opts[:scale_set]}/" \
+                'publicIPAddresses?api-version=2017-03-30'
             else
               "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-              "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Network/" \
-              "publicIPAddresses?api-version=2019-07-01"
+                "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Network/" \
+                'publicIPAddresses?api-version=2019-07-01'
             end
           else
             "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-            "providers/Microsoft.Network/publicIPAddresses?api-version=2019-07-01"
+              'providers/Microsoft.Network/publicIPAddresses?api-version=2019-07-01'
           end
 
     get_all_results(url, token)
   end
 
   def vms(token, creds, opts)
-    debug("Requesting data for virtual machines")
+    debug('Requesting data for virtual machines')
 
     url = if opts[:resource_group]
             if opts[:scale_set]
               "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-              "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Compute/" \
-              "virtualMachineScaleSets/#{opts[:scale_set]}/" \
-              "virtualmachines?api-version=2017-03-30"
+                "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Compute/" \
+                "virtualMachineScaleSets/#{opts[:scale_set]}/" \
+                'virtualmachines?api-version=2017-03-30'
             else
               "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-              "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Compute/" \
-              "virtualmachines?api-version=2019-07-01"
+                "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Compute/" \
+                'virtualmachines?api-version=2019-07-01'
             end
           else
             "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-            "providers/Microsoft.Compute/virtualmachines?api-version=2019-07-01"
+              'providers/Microsoft.Compute/virtualmachines?api-version=2019-07-01'
           end
 
     vms = get_all_results(url, token)
 
     # Filter by location
-    if opts[:location]
-      vms.select! { |vm| vm['location'] == opts[:location] }
-    end
+    vms.select! { |vm| vm['location'] == opts[:location] } if opts[:location]
 
     # Filter by tags - tags are ANDed
     if opts[:tags]
       # Tag names are case insensitive, values are case sensitive
-      expected_tags = opts[:tags].map { |name, value| [name.to_s.downcase, value] }.to_h
+      expected_tags = opts[:tags].transform_keys { |name| name.to_s.downcase }
 
       vms.select! do |vm|
-        present_tags = vm.fetch('tags', {}).map { |name, value| [name.downcase, value] }.to_h
+        present_tags = vm.fetch('tags', {}).transform_keys(&:downcase)
         # Hash <= checks whether the lhs is a subset of the rhs
         expected_tags <= present_tags
       end
@@ -151,22 +150,22 @@ class AzureInventory < TaskHelper
   end
 
   def nics(token, creds, opts)
-    debug("Requesting data for network interfaces")
+    debug('Requesting data for network interfaces')
 
     url = if opts[:resource_group]
             if opts[:scale_set]
               "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-              "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Compute/" \
-              "virtualMachineScaleSets/#{opts[:scale_set]}/" \
-              "networkinterfaces?api-version=2017-03-30"
+                "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Compute/" \
+                "virtualMachineScaleSets/#{opts[:scale_set]}/" \
+                'networkinterfaces?api-version=2017-03-30'
             else
               "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-              "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Network/" \
-              "networkInterfaces?api-version=2019-07-01"
+                "resourceGroups/#{opts[:resource_group]}/providers/Microsoft.Network/" \
+                'networkInterfaces?api-version=2019-07-01'
             end
           else
             "https://management.azure.com/subscriptions/#{creds['subscription_id']}/" \
-            "providers/Microsoft.Network/networkInterfaces?api-version=2019-07-01"
+              'providers/Microsoft.Network/networkInterfaces?api-version=2019-07-01'
           end
 
     get_all_results(url, token)
@@ -181,13 +180,13 @@ class AzureInventory < TaskHelper
   # Uses the client credentials grant flow
   # https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-oauth2-client-creds-grant-flow
   def token(creds)
-    debug("Requesting authorization token")
+    debug('Requesting authorization token')
 
     data = {
       grant_type: 'client_credentials',
       client_id: creds['client_id'],
       client_secret: creds['client_secret'],
-      resource: 'https://management.azure.com'
+      resource: 'https://management.azure.com',
     }
 
     uri = URI.parse("https://login.microsoftonline.com/#{creds['tenant_id']}/oauth2/token")
@@ -216,7 +215,7 @@ class AzureInventory < TaskHelper
       raise TaskHelper::Error.new(
         "Failed to connect to #{uri}: #{e.message}",
         'bolt.plugin/azure-http-error',
-        'debug' => debug_statements
+        'debug' => debug_statements,
       )
     end
 
@@ -232,9 +231,9 @@ class AzureInventory < TaskHelper
             elsif result['error'].is_a?(Hash) && result['error'].key?('message')
               result['error']['message']
             else
-              "Unknown error"
+              'Unknown error'
             end
-      m = String.new("#{response.code} \"#{response.msg}\"")
+      m = "#{response.code} \"#{response.msg}\""
       m += ": #{err}" if err
       raise TaskHelper::Error.new(m, 'bolt.plugin/azure-http-error', 'debug' => debug_statements)
     end
@@ -242,19 +241,17 @@ class AzureInventory < TaskHelper
 
   def task(opts)
     if opts[:scale_set] && !opts[:resource_group]
-      msg = "resource_group must be specified in order to filter by scale_set"
+      msg = 'resource_group must be specified in order to filter by scale_set'
       raise TaskHelper::Error.new(msg, 'bolt.plugin/validation-error')
     end
 
     targets = resolve_reference(opts)
-    return { value: targets }
+    { value: targets }
   rescue TaskHelper::Error => e
     # ruby_task_helper doesn't print errors under the _error key, so we have to
     # handle that ourselves
-    return { _error: e.to_h }
+    { _error: e.to_h }
   end
 end
 
-if $PROGRAM_NAME == __FILE__
-  AzureInventory.run
-end
+AzureInventory.run if $PROGRAM_NAME == __FILE__
